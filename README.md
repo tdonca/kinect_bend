@@ -1,7 +1,7 @@
-# kinect_bend
+# Automatic Bend-Over Detection using Kinect V2
 Using Kinect V2 to detect a person's "bending-down" action.
 
-## Dependencies
+### Dependencies
 Kinect v2 SDK (headers and lib)
 Direct 2D 
 
