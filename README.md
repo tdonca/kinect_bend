@@ -8,9 +8,8 @@ Direct 2D
 
 
 ### TODO 
-  1. Detect bending by tracking neck and hip joints
-  2. Redo implementation to remove unneeded features
-
+  1. Clean up code to remove clutter
+  2. Parallelize frame drawing and body position processing
 
 
 A good Kinect V2 tutorial: https://homes.cs.washington.edu/~edzhang/tutorials/kinect2/kinect0.html
