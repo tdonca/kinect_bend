@@ -10,6 +10,7 @@
 #include "ImageRenderer.h"
 
 static const float c_JointThickness = 3.0f;
+static const float c_CriticalJointThickness = 10.0f;
 static const float c_TrackedBoneThickness = 6.0f;
 static const float c_InferredBoneThickness = 1.0f;
 static const float c_HandSize = 30.0f;
@@ -32,7 +33,8 @@ ImageRenderer::ImageRenderer() :
 	m_pBrushBoneInferred(NULL),
 	m_pBrushHandClosed(NULL),
 	m_pBrushHandOpen(NULL),
-	m_pBrushHandLasso(NULL)
+	m_pBrushHandLasso(NULL),
+	m_pBrushJointCritical(NULL)
 {
 }
 
@@ -86,7 +88,9 @@ HRESULT ImageRenderer::EnsureResources()
             return hr;
         }
 
+		//Drawing colors for joints and bones
 		m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(0.27f, 0.75f, 0.27f), &m_pBrushJointTracked);
+		m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red, 1.0f), &m_pBrushJointCritical);
 
 		m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Yellow, 1.0f), &m_pBrushJointInferred);
 		m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green, 1.0f), &m_pBrushBoneTracked);
@@ -110,6 +114,8 @@ void ImageRenderer::DiscardResources()
     SafeRelease(m_pBitmap);
 
 	SafeRelease(m_pBrushJointTracked);
+	SafeRelease(m_pBrushJointCritical);
+
 	SafeRelease(m_pBrushJointInferred);
 	SafeRelease(m_pBrushBoneTracked);
 	SafeRelease(m_pBrushBoneInferred);
@@ -263,6 +269,7 @@ void ImageRenderer::DrawBody(const Joint* pJoints, const D2D1_POINT_2F* pJointPo
 	// Draw the joints
 	for (int i = 0; i < JointType_Count; ++i)
 	{
+
 		D2D1_ELLIPSE ellipse = D2D1::Ellipse(pJointPoints[i], c_JointThickness, c_JointThickness);
 
 		if (pJoints[i].TrackingState == TrackingState_Inferred)
@@ -271,7 +278,16 @@ void ImageRenderer::DrawBody(const Joint* pJoints, const D2D1_POINT_2F* pJointPo
 		}
 		else if (pJoints[i].TrackingState == TrackingState_Tracked)
 		{
-			m_pRenderTarget->FillEllipse(ellipse, m_pBrushJointTracked);
+			//Highlight bend tracked joints
+			if (pJoints[i].JointType == JointType_Neck || pJoints[i].JointType == JointType_SpineBase) {
+				ellipse.radiusX = c_CriticalJointThickness;
+				ellipse.radiusY = c_CriticalJointThickness;
+				m_pRenderTarget->FillEllipse(ellipse, m_pBrushJointCritical);
+			}
+			else {
+				m_pRenderTarget->FillEllipse(ellipse, m_pBrushJointTracked);
+			}
+			
 		}
 	}
 

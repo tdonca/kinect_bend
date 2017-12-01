@@ -579,38 +579,38 @@ void CCoordinateMappingBasics::ProcessFrame(INT64 nTime,
                                             const RGBQUAD* pColorBuffer, int nColorWidth, int nColorHeight,
                                             const BYTE* pBodyIndexBuffer, int nBodyIndexWidth, int nBodyIndexHeight)
 {
-    if (m_hWnd)
-    {
-        if (!m_nStartTime)
-        {
-            m_nStartTime = nTime;
-        }
+  //  if (m_hWnd)
+  //  {
+  //      if (!m_nStartTime)
+  //      {
+  //          m_nStartTime = nTime;
+  //      }
 
-        double fps = 0.0;
+  //      double fps = 0.0;
 
-        LARGE_INTEGER qpcNow = {0};
-        if (m_fFreq)
-        {
-            if (QueryPerformanceCounter(&qpcNow))
-            {
-                if (m_nLastCounter)
-                {
-                    m_nFramesSinceUpdate++;
-                    fps = m_fFreq * m_nFramesSinceUpdate / double(qpcNow.QuadPart - m_nLastCounter);
-                }
-            }
-        }
+  //      LARGE_INTEGER qpcNow = {0};
+  //      if (m_fFreq)
+  //      {
+  //          if (QueryPerformanceCounter(&qpcNow))
+  //          {
+  //              if (m_nLastCounter)
+  //              {
+  //                  m_nFramesSinceUpdate++;
+  //                  fps = m_fFreq * m_nFramesSinceUpdate / double(qpcNow.QuadPart - m_nLastCounter);
+  //              }
+  //          }
+  //      }
 
-		//Print message bar ****
-        WCHAR szStatusMessage[64];
-        StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" FPS = %0.2f    Time = %I64d", fps, (nTime - m_nStartTime));
+		////Print message bar ****
+  //      WCHAR szStatusMessage[64];
+  //      StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" FPS = %0.2f    Time = %I64d", fps, (nTime - m_nStartTime));
 
-        if (SetStatusMessage(szStatusMessage, 1000, false))
-        {
-            m_nLastCounter = qpcNow.QuadPart;
-            m_nFramesSinceUpdate = 0;
-        }
-    }
+  //      if (SetStatusMessage(szStatusMessage, 1000, false))
+  //      {
+  //          m_nLastCounter = qpcNow.QuadPart;
+  //          m_nFramesSinceUpdate = 0;
+  //      }
+  //  }
 
     // Make sure we've received valid data
     if (m_pCoordinateMapper && m_pDepthCoordinates && m_pOutputRGBX && 
@@ -664,12 +664,6 @@ void CCoordinateMappingBasics::ProcessFrame(INT64 nTime,
                 m_pOutputRGBX[colorIndex] = *pSrc;
 			}
 
-			//*************
-			//Draw with Direct2d Renderer
-			//get body
-			//call body to
-			//call draw functions 
-
 
             // Draw the data with Direct2D
             m_pDrawCoordinateMapping->Draw(reinterpret_cast<BYTE*>(m_pOutputRGBX), cColorWidth * cColorHeight * sizeof(RGBQUAD));
@@ -716,9 +710,26 @@ void CCoordinateMappingBasics::ProcessBody(INT64 nTime, int nBodyCount, IBody** 
 						{
 							for (int j = 0; j < _countof(joints); ++j)
 							{
-								jointPoints[j] = BodyToScreen(joints[j].Position, cColorWidth, cColorHeight);
+									jointPoints[j] = BodyToScreen(joints[j].Position, cColorWidth, cColorHeight);
 							}
 
+							//detect bend and send message to screen
+							//spinebase = 0, neck = 2
+							float horizDistance = jointPoints[2].x - jointPoints[0].x;
+							//Print message bar
+							WCHAR szStatusMessage[64];
+							if (horizDistance > 100 || horizDistance < -100) {//bend detected
+								StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" Bend Detected! Please use proper form.");
+								SetStatusMessage(szStatusMessage, 2000, false);
+							}
+							else{
+								StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" Horizontal Distance: %0.2f", horizDistance);
+								SetStatusMessage(szStatusMessage, 200, false);
+							}
+
+							
+
+							//draw skeleton over body
 							m_pDrawCoordinateMapping->DrawBody(joints, jointPoints);
 
 						}

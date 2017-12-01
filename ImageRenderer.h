@@ -93,6 +93,8 @@ private:
 	ID2D1SolidColorBrush*   m_pBrushHandOpen;
 	ID2D1SolidColorBrush*   m_pBrushHandLasso;
 
+	ID2D1SolidColorBrush*   m_pBrushJointCritical;
+
     /// <summary>
     /// Ensure necessary Direct2d resources are created
     /// </summary>
