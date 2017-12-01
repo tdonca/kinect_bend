@@ -4,6 +4,8 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
+
+
 #include "stdafx.h"
 #include "ImageRenderer.h"
 
@@ -215,7 +217,14 @@ HRESULT ImageRenderer::Draw(BYTE* pImage, unsigned long cbImage)
 /// <param name="pJointPoints">joint positions converted to screen space</param>
 void ImageRenderer::DrawBody(const Joint* pJoints, const D2D1_POINT_2F* pJointPoints)
 {
-	// Draw the bones
+	HRESULT hr = EnsureResources();
+
+	if (FAILED(hr))
+	{
+		return;
+	}
+	//begin drawing
+	m_pRenderTarget->BeginDraw();
 
 	// Torso
 	DrawBone(pJoints, pJointPoints, JointType_Head, JointType_Neck);
@@ -264,6 +273,17 @@ void ImageRenderer::DrawBody(const Joint* pJoints, const D2D1_POINT_2F* pJointPo
 		{
 			m_pRenderTarget->FillEllipse(ellipse, m_pBrushJointTracked);
 		}
+	}
+
+	//finished drawing
+	hr = m_pRenderTarget->EndDraw();
+
+	// Device lost, need to recreate the render target
+	// We'll dispose it now and retry drawing
+	if (hr == D2DERR_RECREATE_TARGET)
+	{
+		hr = S_OK;
+		DiscardResources();
 	}
 }
 

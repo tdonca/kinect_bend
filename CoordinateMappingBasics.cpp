@@ -147,7 +147,7 @@ int CCoordinateMappingBasics::Run(HINSTANCE hInstance, int nCmdShow)
 {
     if (m_pBackgroundRGBX)
     {
-        const RGBQUAD c_gray = {0, 192, 192}; 
+        const RGBQUAD c_gray = {192	, 192, 192}; 
 
         // Fill in with a background colour of gray
         for (int i = 0 ; i < cColorWidth * cColorHeight ; ++i)
@@ -601,6 +601,7 @@ void CCoordinateMappingBasics::ProcessFrame(INT64 nTime,
             }
         }
 
+		//Print message bar ****
         WCHAR szStatusMessage[64];
         StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" FPS = %0.2f    Time = %I64d", fps, (nTime - m_nStartTime));
 
@@ -617,6 +618,13 @@ void CCoordinateMappingBasics::ProcessFrame(INT64 nTime,
         pColorBuffer && (nColorWidth == cColorWidth) && (nColorHeight == cColorHeight) &&
         pBodyIndexBuffer && (nBodyIndexWidth == cDepthWidth) && (nBodyIndexHeight == cDepthHeight))
     {
+		/*  Color to Depth mapping is a little tricky because to compute that mapping we actually 
+			need the depth image and not the color image (the color of your shirt doesn't help determine how far away it is). 
+			MapColorFrameToDepthSpace works just the same as MapDepthFrameToColorSpace and still 
+			takes the depth frame as the input, but instead returns an array the size of the color image filled with 
+			DepthSpacePoints telling you where to find the corresponding depth point for that color pixel.
+		*/
+
         HRESULT hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(nDepthWidth * nDepthHeight, (UINT16*)pDepthBuffer, nColorWidth * nColorHeight, m_pDepthCoordinates);
         if (SUCCEEDED(hr))
         {
@@ -701,13 +709,9 @@ void CCoordinateMappingBasics::ProcessBody(INT64 nTime, int nBodyCount, IBody** 
 					{
 						Joint joints[JointType_Count];
 						D2D1_POINT_2F jointPoints[JointType_Count];
-						HandState leftHandState = HandState_Unknown;
-						HandState rightHandState = HandState_Unknown;
-
-						pBody->get_HandLeftState(&leftHandState);
-						pBody->get_HandRightState(&rightHandState);
 
 						hr = pBody->GetJoints(_countof(joints), joints);
+
 						if (SUCCEEDED(hr))
 						{
 							for (int j = 0; j < _countof(joints); ++j)
@@ -717,8 +721,6 @@ void CCoordinateMappingBasics::ProcessBody(INT64 nTime, int nBodyCount, IBody** 
 
 							m_pDrawCoordinateMapping->DrawBody(joints, jointPoints);
 
-							m_pDrawCoordinateMapping->DrawHand(leftHandState, jointPoints[JointType_HandLeft]);
-							m_pDrawCoordinateMapping->DrawHand(rightHandState, jointPoints[JointType_HandRight]);
 						}
 					}
 				}
@@ -731,7 +733,7 @@ void CCoordinateMappingBasics::ProcessBody(INT64 nTime, int nBodyCount, IBody** 
 
 
 /// <summary>
-/// Converts a body point to screen space
+/// Converts a body point to screen space (color space)
 /// </summary>
 /// <param name="bodyPoint">body point to tranform</param>
 /// <param name="width">width (in pixels) of output buffer</param>
@@ -740,12 +742,18 @@ void CCoordinateMappingBasics::ProcessBody(INT64 nTime, int nBodyCount, IBody** 
 D2D1_POINT_2F CCoordinateMappingBasics::BodyToScreen(const CameraSpacePoint& bodyPoint, int width, int height)
 {
 	// Calculate the body's position on the screen
-	DepthSpacePoint depthPoint = { 0 };
-	m_pCoordinateMapper->MapCameraPointToDepthSpace(bodyPoint, &depthPoint);
+	//DepthSpacePoint depthPoint = { 0 };
+	//m_pCoordinateMapper->MapCameraPointToDepthSpace(bodyPoint, &depthPoint);
 
-	float screenPointX = static_cast<float>(depthPoint.X * width) / cDepthWidth;
-	float screenPointY = static_cast<float>(depthPoint.Y * height) / cDepthHeight;
+	//float screenPointX = static_cast<float>(depthPoint.X * width) / cDepthWidth;
+	//float screenPointY = static_cast<float>(depthPoint.Y * height) / cDepthHeight;
 
+	//return D2D1::Point2F(screenPointX, screenPointY);
+
+	ColorSpacePoint colorPoint = { 0 };
+	m_pCoordinateMapper->MapCameraPointToColorSpace(bodyPoint, &colorPoint);
+	float screenPointX = static_cast<float>(colorPoint.X * width) / cColorWidth;
+	float screenPointY = static_cast<float>(colorPoint.Y * height) / cColorHeight;
 	return D2D1::Point2F(screenPointX, screenPointY);
 }
 

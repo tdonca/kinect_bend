@@ -4,6 +4,8 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
+
+
 // Manages the drawing of image data
 
 #pragma once
